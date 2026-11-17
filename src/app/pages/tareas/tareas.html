@@ -13,6 +13,46 @@
 
   @if (errorMessage()) { <p class="form-alert" role="alert">{{ errorMessage() }}</p> }
 
+  <section class="filters-panel" aria-labelledby="filters-heading">
+    <div class="filters-heading">
+      <div>
+        <h3 id="filters-heading">Buscar y filtrar tareas</h3>
+        <p>Encuentra rápidamente una actividad según sus datos.</p>
+      </div>
+      @if (filtrosActivos()) {
+        <button class="clear-filters" type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+      }
+    </div>
+    <div class="filters-grid">
+      <div class="filter-field filter-search">
+        <label for="task-search">Buscar por título</label>
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
+          <input id="task-search" type="search" placeholder="Ej. proyecto final" [value]="busqueda()" (input)="actualizarBusqueda($event)" autocomplete="off" />
+        </div>
+      </div>
+      <div class="filter-field">
+        <label for="filter-subject">Materia</label>
+        <select id="filter-subject" [value]="filtroMateria()" (change)="actualizarMateria($event)">
+          <option value="">Todas las materias</option>
+          @for (materia of eduTrack.materias(); track materia.id) { <option [value]="materia.id">{{ materia.nombre }}</option> }
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="filter-priority">Prioridad</label>
+        <select id="filter-priority" [value]="filtroPrioridad()" (change)="actualizarPrioridad($event)">
+          <option value="">Todas</option><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="filter-status">Estado</label>
+        <select id="filter-status" [value]="filtroEstado()" (change)="actualizarEstado($event)">
+          <option value="">Todos</option><option value="pendiente">Pendientes</option><option value="completada">Completadas</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
   @if (formularioVisible()) {
     <form class="task-form" [formGroup]="tareaForm" (ngSubmit)="guardarTarea()">
       <div class="form-heading">
@@ -73,13 +113,13 @@
   }
 
   <div class="list-heading">
-    <div><h3>Tus tareas</h3><p>{{ eduTrack.totalTareas() }} {{ eduTrack.totalTareas() === 1 ? 'tarea registrada' : 'tareas registradas' }}</p></div>
+    <div><h3>Tus tareas</h3><p>{{ tareasFiltradas().length }} de {{ eduTrack.totalTareas() }} {{ eduTrack.totalTareas() === 1 ? 'tarea registrada' : 'tareas registradas' }}</p></div>
     <span class="pending-summary">{{ eduTrack.tareasPendientes() }} pendientes</span>
   </div>
 
-  @if (tareasConMateria().length > 0) {
+  @if (tareasFiltradas().length > 0) {
     <div class="task-list">
-      @for (item of tareasConMateria(); track item.tarea.id) {
+      @for (item of tareasFiltradas(); track item.tarea.id) {
         <article class="task-card" [class.task-card--completed]="item.tarea.estado === 'completada'">
           <button class="status-button" type="button" [attr.aria-label]="item.tarea.estado === 'completada' ? 'Marcar como pendiente' : 'Marcar como completada'" (click)="cambiarEstado(item.tarea)">
             <span [class.status-check]="item.tarea.estado === 'completada'" aria-hidden="true">{{ item.tarea.estado === 'completada' ? '✓' : '' }}</span>
@@ -111,10 +151,18 @@
       }
     </div>
   } @else {
+    @if (eduTrack.totalTareas() > 0 && filtrosActivos()) {
+      <div class="empty-state empty-state--compact">
+        <span class="empty-icon" aria-hidden="true">⌕</span><h4>No hay tareas que coincidan</h4>
+        <p>Prueba cambiando los criterios de búsqueda o limpia los filtros activos.</p>
+        <button class="secondary-button" type="button" (click)="limpiarFiltros()">Limpiar filtros</button>
+      </div>
+    } @else {
     <div class="empty-state">
       <span class="empty-icon" aria-hidden="true">✓</span><h4>Aún no tienes tareas</h4>
       <p>Agrega tu primera tarea para empezar a organizar tus entregas.</p>
       <button class="primary-button" type="button" (click)="abrirNuevaTarea()">Agregar primera tarea</button>
     </div>
+    }
   }
 </section>
