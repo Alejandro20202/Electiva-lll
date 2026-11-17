@@ -1,0 +1,92 @@
+<section class="statistics-page" aria-labelledby="page-heading">
+  <header class="page-heading">
+    <div>
+      <span class="page-eyebrow">TU ESPACIO ACADÉMICO</span>
+      <h2 id="page-heading">Estadísticas</h2>
+      <p>Conoce tu progreso académico y la distribución de tus actividades.</p>
+    </div>
+    <a class="secondary-button" routerLink="/tareas">Ver mis tareas <span aria-hidden="true">→</span></a>
+  </header>
+
+  <section class="headline-grid" aria-label="Resumen de rendimiento">
+    <article class="headline-card headline-card--blue">
+      <span class="headline-icon" aria-hidden="true">✓</span>
+      <span class="headline-label">Progreso general</span>
+      <strong>{{ eduTrack.porcentajeTareasCompletadas() }}%</strong>
+      <span>{{ eduTrack.tareasCompletadas() }} de {{ eduTrack.totalTareas() }} tareas</span>
+    </article>
+    <article class="headline-card headline-card--amber">
+      <span class="headline-icon" aria-hidden="true">○</span>
+      <span class="headline-label">Pendientes</span>
+      <strong>{{ eduTrack.tareasPendientes() }}</strong>
+      <span>actividades por completar</span>
+    </article>
+    <article class="headline-card headline-card--green">
+      <span class="headline-icon" aria-hidden="true">▦</span>
+      <span class="headline-label">Materias activas</span>
+      <strong>{{ eduTrack.totalMaterias() }}</strong>
+      <span>{{ tareasSinMateria() }} tareas sin materia</span>
+    </article>
+  </section>
+
+  @if (eduTrack.totalTareas() > 0) {
+    <div class="statistics-columns">
+      <section class="panel" aria-labelledby="subjects-statistics-heading">
+        <div class="panel-heading">
+          <div>
+            <h3 id="subjects-statistics-heading">Actividades por materia</h3>
+            <p>Progreso de tareas completadas en cada asignatura.</p>
+          </div>
+        </div>
+
+        @if (tareasPorMateria().length > 0) {
+          <div class="subject-statistics">
+            @for (stat of tareasPorMateria(); track stat.materia.id) {
+              <article class="subject-stat">
+                <div class="subject-stat-heading">
+                  <span class="subject-dot" [class]="'subject-dot subject-dot--' + stat.materia.color" aria-hidden="true"></span>
+                  <h4>{{ stat.materia.nombre }}</h4>
+                  <span>{{ stat.completadas }}/{{ stat.total }}</span>
+                </div>
+                <div class="progress-track" role="progressbar" [attr.aria-label]="'Progreso de ' + stat.materia.nombre" [attr.aria-valuenow]="stat.porcentaje" aria-valuemin="0" aria-valuemax="100">
+                  <span [class]="'progress-fill progress-fill--' + stat.materia.color" [style.width.%]="stat.porcentaje"></span>
+                </div>
+                <div class="subject-stat-footer"><span>{{ stat.pendientes }} pendientes</span><strong>{{ stat.porcentaje }}%</strong></div>
+              </article>
+            }
+          </div>
+        } @else {
+          <div class="panel-empty"><p>Registra una materia para ver su distribución de actividades.</p><a routerLink="/materias">Agregar materia →</a></div>
+        }
+        @if (tareasSinMateria() > 0) {
+          <p class="unassigned-note">{{ tareasSinMateria() }} {{ tareasSinMateria() === 1 ? 'actividad está' : 'actividades están' }} sin materia asignada.</p>
+        }
+      </section>
+
+      <section class="panel" aria-labelledby="priority-heading">
+        <div class="panel-heading">
+          <div>
+            <h3 id="priority-heading">Distribución por prioridad</h3>
+            <p>Cómo se reparten tus actividades registradas.</p>
+          </div>
+        </div>
+        <div class="priority-list">
+          @for (item of prioridades(); track item.prioridad) {
+            <div class="priority-row">
+              <div class="priority-row-heading"><span class="priority-badge" [class]="'priority-badge priority-badge--' + item.prioridad">{{ prioridadTexto(item.prioridad) }}</span><strong>{{ item.total }}</strong></div>
+              <div class="progress-track progress-track--small"><span [class]="'progress-fill progress-fill--priority-' + item.prioridad" [style.width.%]="item.porcentaje"></span></div>
+              <span class="priority-percentage">{{ item.porcentaje }}%</span>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  } @else {
+    <section class="empty-state">
+      <span class="empty-icon" aria-hidden="true">▥</span>
+      <h3>Aún no hay estadísticas</h3>
+      <p>Registra tus primeras tareas para comenzar a visualizar tu progreso académico.</p>
+      <a class="primary-button" routerLink="/tareas">Crear primera tarea</a>
+    </section>
+  }
+</section>
