@@ -1,0 +1,156 @@
+<section class="dashboard" aria-labelledby="dashboard-heading">
+  <header class="welcome">
+    <div>
+      <span class="eyebrow">TU ESPACIO ACADÉMICO</span>
+      <h2 id="dashboard-heading">Resumen de tu actividad</h2>
+      <p>Un vistazo a tus materias, tareas y progreso académico.</p>
+    </div>
+    <a class="text-link" routerLink="/materias">Ver mis materias <span aria-hidden="true">→</span></a>
+  </header>
+
+  <section class="stats-grid" aria-label="Resumen académico">
+    <article class="stat-card stat-card--subjects">
+      <span class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" />
+          <path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8m-8 4h6" />
+        </svg>
+      </span>
+      <span class="stat-label">Materias</span>
+      <strong class="stat-value">{{ eduTrack.totalMaterias() }}</strong>
+      <span class="stat-footnote">asignaturas registradas</span>
+    </article>
+
+    <article class="stat-card stat-card--pending">
+      <span class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M8 5H5v16h14V5h-3M9 3h6v4H9V3Z" />
+          <path d="m8 13 2 2 5-5m-7 9h8" />
+        </svg>
+      </span>
+      <span class="stat-label">Tareas pendientes</span>
+      <strong class="stat-value">{{ eduTrack.tareasPendientes() }}</strong>
+      <span class="stat-footnote">por completar</span>
+    </article>
+
+    <article class="stat-card stat-card--completed">
+      <span class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m8 12 2.5 2.5L16 9" />
+        </svg>
+      </span>
+      <span class="stat-label">Tareas completadas</span>
+      <strong class="stat-value">{{ eduTrack.tareasCompletadas() }}</strong>
+      <span class="stat-footnote">buen trabajo, sigue así</span>
+    </article>
+
+    <article class="stat-card stat-card--progress">
+      <span class="stat-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 20V10m5 10V4m5 16v-7m5 7V7m-17 14h20" />
+        </svg>
+      </span>
+      <span class="stat-label">Progreso general</span>
+      <strong class="stat-value">{{ eduTrack.porcentajeTareasCompletadas() }}%</strong>
+      <span class="stat-footnote">de tus tareas completadas</span>
+      <span
+        class="stat-progress-track"
+        role="progressbar"
+        aria-label="Progreso general de tareas"
+        [attr.aria-valuenow]="eduTrack.porcentajeTareasCompletadas()"
+        aria-valuemin="0"
+        aria-valuemax="100"
+      >
+        <span [style.width.%]="eduTrack.porcentajeTareasCompletadas()"></span>
+      </span>
+    </article>
+  </section>
+
+  <div class="dashboard-columns">
+    <section class="panel subjects-panel" aria-labelledby="subjects-heading">
+      <div class="panel-heading">
+        <div>
+          <h3 id="subjects-heading">Progreso por materia</h3>
+          <p>Avance de tus tareas en cada asignatura</p>
+        </div>
+        <a class="text-link" routerLink="/materias">Ver todas <span aria-hidden="true">→</span></a>
+      </div>
+
+      @if (materiasProgreso().length > 0) {
+        <div class="subject-progress-list">
+          @for (materia of materiasProgreso(); track materia.id) {
+            <article class="subject-progress">
+              <div class="subject-progress-heading">
+                <span
+                  class="subject-dot"
+                  [class]="'subject-dot subject-dot--' + materia.color"
+                  aria-hidden="true"
+                ></span>
+                <h4>{{ materia.nombre }}</h4>
+                <span class="subject-task-total">
+                  {{ materia.completadas }}/{{ materia.total }} tareas
+                </span>
+              </div>
+              <div
+                class="progress-track"
+                role="progressbar"
+                [attr.aria-label]="'Progreso de ' + materia.nombre"
+                [attr.aria-valuenow]="materia.porcentaje"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <span
+                  [class]="'progress-fill progress-fill--' + materia.color"
+                  [style.width.%]="materia.porcentaje"
+                ></span>
+              </div>
+              <span class="progress-label">{{ materia.porcentaje }}%</span>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="panel-empty">
+          <p>Aún no tienes materias para mostrar.</p>
+          <a class="text-link" routerLink="/materias">Agregar una materia <span aria-hidden="true">→</span></a>
+        </div>
+      }
+    </section>
+
+    <section class="panel deadlines-panel" aria-labelledby="deadlines-heading">
+      <div class="panel-heading">
+        <div>
+          <h3 id="deadlines-heading">Próximas entregas</h3>
+          <p>Tus tareas pendientes con fecha de entrega</p>
+        </div>
+        <a class="text-link" routerLink="/tareas">Ver tareas <span aria-hidden="true">→</span></a>
+      </div>
+
+      @if (proximasEntregas().length > 0) {
+        <ul class="deadline-list">
+          @for (entrega of proximasEntregas(); track entrega.tarea.id) {
+            <li class="deadline-item">
+              <span
+                class="deadline-indicator"
+                [class]="'deadline-indicator' + (entrega.materiaColor ? ' deadline-indicator--' + entrega.materiaColor : '')"
+                aria-hidden="true"
+              ></span>
+              <div class="deadline-copy">
+                <h4>{{ entrega.tarea.titulo }}</h4>
+                <span>{{ entrega.materiaNombre }}</span>
+              </div>
+              <time class="deadline-date" [attr.datetime]="entrega.tarea.fechaEntrega">
+                {{ entrega.fechaTexto }}
+              </time>
+            </li>
+          }
+        </ul>
+      } @else {
+        <div class="panel-empty">
+          <p>No tienes próximas entregas pendientes.</p>
+          <a class="text-link" routerLink="/tareas">Ir a tareas <span aria-hidden="true">→</span></a>
+        </div>
+      }
+    </section>
+  </div>
+</section>
