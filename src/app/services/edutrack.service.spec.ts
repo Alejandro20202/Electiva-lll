@@ -110,6 +110,7 @@ describe('EduTrackService browser persistence', () => {
 
     const service = fixture.componentInstance.service;
     expect(service.materias().map((materia) => materia.nombre)).toEqual(['Biología']);
+    expect(service.materias()[0]?.color).toBe('azul');
 
     service.createTarea({ titulo: 'Informe' });
 

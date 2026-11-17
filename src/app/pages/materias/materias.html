@@ -1,0 +1,240 @@
+<section class="subjects-page" aria-labelledby="page-heading">
+  <div class="page-heading">
+    <div>
+      <span class="page-eyebrow">TU ESPACIO ACADÉMICO</span>
+      <h2 id="page-heading">Materias</h2>
+      <p>Organiza tus asignaturas y consulta sus tareas asociadas.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="abrirNuevaMateria()">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14m-7-7h14" />
+      </svg>
+      Agregar materia
+    </button>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="form-alert" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (formularioVisible()) {
+    <form class="subject-form" [formGroup]="materiaForm" (ngSubmit)="guardarMateria()">
+      <div class="form-heading">
+        <div>
+          <h3>{{ editandoId() ? 'Editar materia' : 'Nueva materia' }}</h3>
+          <p>Completa la información de la asignatura.</p>
+        </div>
+        <button
+          class="icon-button close-button"
+          type="button"
+          aria-label="Cerrar formulario"
+          (click)="cancelarFormulario()"
+        >
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="form-grid">
+        <div class="field field-name">
+          <label for="subject-name">Nombre de la materia <span aria-hidden="true">*</span></label>
+          <input
+            id="subject-name"
+            type="text"
+            formControlName="nombre"
+            maxlength="70"
+            autocomplete="off"
+            placeholder="Ej. Matemáticas"
+            [attr.aria-invalid]="nombre.invalid && (nombre.touched || enviado())"
+            [attr.aria-describedby]="
+              nombre.invalid && (nombre.touched || enviado()) ? 'subject-name-error' : null
+            "
+          />
+          @if (nombre.invalid && (nombre.touched || enviado())) {
+            <span class="field-error" id="subject-name-error">
+              @if (nombre.hasError('required') || nombre.hasError('blank')) {
+                Escribe el nombre de la materia.
+              } @else if (nombre.hasError('maxlength')) {
+                El nombre no puede superar los 70 caracteres.
+              }
+            </span>
+          }
+        </div>
+
+        <div class="field">
+          <label for="subject-teacher">Profesor <span class="optional">(opcional)</span></label>
+          <input
+            id="subject-teacher"
+            type="text"
+            formControlName="profesor"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="Nombre del profesor"
+          />
+          @if (materiaForm.controls.profesor.hasError('maxlength')) {
+            <span class="field-error">El nombre no puede superar los 80 caracteres.</span>
+          }
+        </div>
+
+        <div class="field field-description">
+          <label for="subject-description">
+            Descripción <span class="optional">(opcional)</span>
+          </label>
+          <textarea
+            id="subject-description"
+            formControlName="descripcion"
+            maxlength="240"
+            rows="3"
+            placeholder="Añade una breve descripción"
+          ></textarea>
+          <span class="character-count">
+            {{ materiaForm.controls.descripcion.value.length }}/240
+          </span>
+        </div>
+
+        <fieldset class="field color-field">
+          <legend>Color de identificación</legend>
+          <div class="color-options">
+            @for (color of colores; track color.name) {
+              <label class="color-option">
+                <input
+                  type="radio"
+                  formControlName="color"
+                  [value]="color.name"
+                  [attr.aria-label]="color.label"
+                />
+                <span
+                  class="color-swatch"
+                  [class]="'color-swatch color-swatch--' + color.name"
+                  aria-hidden="true"
+                ></span>
+                <span>{{ color.label }}</span>
+              </label>
+            }
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="cancelarFormulario()">
+          Cancelar
+        </button>
+        <button class="primary-button" type="submit">
+          {{ editandoId() ? 'Guardar cambios' : 'Crear materia' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  <div class="list-heading">
+    <div>
+      <h3>Tus materias</h3>
+      <p>{{ eduTrack.totalMaterias() }} asignaturas registradas</p>
+    </div>
+  </div>
+
+  @if (eduTrack.materias().length > 0) {
+    <div class="subject-list">
+      @for (materia of eduTrack.materias(); track materia.id) {
+        @let taskCount = tareasAsociadas(materia.id);
+        <article
+          class="subject-card"
+          [class]="'subject-card subject-card--' + materia.color"
+        >
+          <span class="subject-accent" aria-hidden="true"></span>
+          <div class="subject-main">
+            <div class="subject-title-row">
+              <span
+                class="subject-dot"
+                [class]="'subject-dot subject-dot--' + materia.color"
+                aria-hidden="true"
+              ></span>
+              <h4>{{ materia.nombre }}</h4>
+            </div>
+            @if (materia.profesor) {
+              <p class="subject-teacher">{{ materia.profesor }}</p>
+            }
+            @if (materia.descripcion) {
+              <p class="subject-description">{{ materia.descripcion }}</p>
+            }
+            <span class="task-count">
+              {{ taskCount }}
+              {{ taskCount === 1 ? 'tarea asociada' : 'tareas asociadas' }}
+            </span>
+          </div>
+
+          <div class="subject-actions">
+            <button
+              class="secondary-button action-button"
+              type="button"
+              (click)="editarMateria(materia)"
+              [attr.aria-label]="'Editar ' + materia.nombre"
+            >
+              Editar
+            </button>
+            <button
+              class="danger-button action-button"
+              type="button"
+              (click)="pedirConfirmacion(materia.id)"
+              [attr.aria-label]="'Eliminar ' + materia.nombre"
+            >
+              Eliminar
+            </button>
+          </div>
+
+          @if (confirmarEliminacionId() === materia.id) {
+            <div class="delete-confirmation" role="group" aria-label="Confirmar eliminación">
+              <p>
+                ¿Eliminar <strong>{{ materia.nombre }}</strong>?
+                @if (taskCount > 0) {
+                  También se eliminarán sus {{ taskCount }}
+                  {{ taskCount === 1 ? 'tarea asociada' : 'tareas asociadas' }}.
+                }
+              </p>
+              <button
+                class="secondary-button action-button"
+                type="button"
+                (click)="confirmarEliminacionId.set(null)"
+              >
+                Cancelar
+              </button>
+              <button
+                class="danger-button action-button"
+                type="button"
+                (click)="eliminarMateria(materia.id)"
+              >
+                Confirmar eliminación
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z"
+            stroke="currentColor"
+            stroke-linejoin="round"
+            stroke-width="1.7"
+          />
+          <path
+            d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h8m-8 4h6"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.7"
+          />
+        </svg>
+      </span>
+      <h4>Aún no tienes materias</h4>
+      <p>Agrega tu primera materia para empezar a organizar tus estudios.</p>
+      <button class="primary-button" type="button" (click)="abrirNuevaMateria()">
+        Agregar primera materia
+      </button>
+    </div>
+  }
+</section>

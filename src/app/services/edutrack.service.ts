@@ -7,7 +7,13 @@ import {
   signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Materia, NuevaMateria } from '../models/materia.model';
+import {
+  DEFAULT_MATERIA_COLOR,
+  MATERIA_COLORS,
+  Materia,
+  MateriaColor,
+  NuevaMateria,
+} from '../models/materia.model';
 import { NuevaTarea, Tarea } from '../models/tarea.model';
 
 const STORAGE_KEY = 'edutrack-data';
@@ -19,17 +25,29 @@ interface PersistedState {
   tareas: Tarea[];
 }
 
+type StoredMateria = Omit<Materia, 'color'> & { color?: MateriaColor };
+
+interface StoredState {
+  version: number;
+  materias: StoredMateria[];
+  tareas: Tarea[];
+}
+
+const isMateriaColor = (value: unknown): value is MateriaColor =>
+  MATERIA_COLORS.some((color) => color.name === value);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isMateria(value: unknown): value is Materia {
+function isMateria(value: unknown): value is StoredMateria {
   return (
     isRecord(value) &&
     typeof value['id'] === 'string' &&
     typeof value['nombre'] === 'string' &&
     typeof value['descripcion'] === 'string' &&
     typeof value['profesor'] === 'string' &&
+    (value['color'] === undefined || isMateriaColor(value['color'])) &&
     typeof value['createdAt'] === 'string'
   );
 }
@@ -50,7 +68,7 @@ function isTarea(value: unknown): value is Tarea {
   );
 }
 
-function isPersistedState(value: unknown): value is PersistedState {
+function isStoredState(value: unknown): value is StoredState {
   return (
     isRecord(value) &&
     value['version'] === STORAGE_VERSION &&
@@ -103,6 +121,7 @@ export class EduTrackService {
       nombre: input.nombre,
       descripcion: input.descripcion ?? '',
       profesor: input.profesor ?? '',
+      color: input.color ?? DEFAULT_MATERIA_COLOR,
       createdAt: new Date().toISOString(),
     };
     const materias = [...this.materias(), materia];
@@ -117,7 +136,7 @@ export class EduTrackService {
       throw new Error(`No existe una materia con el id "${id}".`);
     }
 
-    const updated = { ...current, ...changes };
+    const updated: Materia = { ...current, ...changes };
     const materias = this.materias().map((materia) =>
       materia.id === id ? updated : materia,
     );
@@ -222,12 +241,17 @@ export class EduTrackService {
       return;
     }
 
-    if (!isPersistedState(parsed)) {
+    if (!isStoredState(parsed)) {
       console.error('EduTrack encontró datos con un formato o versión no compatible.');
       return;
     }
 
-    this.materiasState.set(parsed.materias);
+    this.materiasState.set(
+      parsed.materias.map((materia) => ({
+        ...materia,
+        color: materia.color ?? DEFAULT_MATERIA_COLOR,
+      })),
+    );
     this.tareasState.set(parsed.tareas);
   }
 
