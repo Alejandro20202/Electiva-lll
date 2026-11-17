@@ -16,7 +16,7 @@ test('persists task form changes and updates Dashboard signals and upcoming deli
 
   await page.getByLabel('Título de la tarea').fill('Flujo integración');
   await page.getByLabel('Fecha de entrega (opcional)').fill(dueDateValue);
-  await page.getByLabel('Prioridad').selectOption('alta');
+  await page.locator('#task-priority').selectOption('alta');
   await page.getByRole('button', { name: 'Crear tarea' }).click();
 
   const taskCard = page.locator('.task-card').filter({

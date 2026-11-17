@@ -19,12 +19,30 @@ export class Tareas {
   protected readonly editandoId = signal<string | null>(null);
   protected readonly confirmarEliminacionId = signal<string | null>(null);
   protected readonly errorMessage = signal('');
+  protected readonly busqueda = signal('');
+  protected readonly filtroMateria = signal('');
+  protected readonly filtroPrioridad = signal<PrioridadTarea | ''>('');
+  protected readonly filtroEstado = signal<EstadoTarea | ''>('');
 
-  protected readonly tareasConMateria = computed(() =>
-    this.eduTrack.tareas().map((tarea) => ({
-      tarea,
-      materia: tarea.materiaId ? this.eduTrack.getMateria(tarea.materiaId) : undefined,
-    })),
+  protected readonly tareasFiltradas = computed(() => {
+    const texto = this.busqueda().trim().toLocaleLowerCase();
+    const materiaId = this.filtroMateria();
+    const prioridad = this.filtroPrioridad();
+    const estado = this.filtroEstado();
+
+    return this.eduTrack.tareas()
+      .filter((tarea) => !texto || tarea.titulo.toLocaleLowerCase().includes(texto))
+      .filter((tarea) => !materiaId || tarea.materiaId === materiaId)
+      .filter((tarea) => !prioridad || tarea.prioridad === prioridad)
+      .filter((tarea) => !estado || tarea.estado === estado)
+      .map((tarea) => ({
+        tarea,
+        materia: tarea.materiaId ? this.eduTrack.getMateria(tarea.materiaId) : undefined,
+      }));
+  });
+
+  protected readonly filtrosActivos = computed(() =>
+    Boolean(this.busqueda().trim() || this.filtroMateria() || this.filtroPrioridad() || this.filtroEstado()),
   );
 
   private readonly nonBlankValidator: ValidatorFn = (control) =>
@@ -125,6 +143,29 @@ export class Tareas {
     } catch (error) {
       this.errorMessage.set(error instanceof Error ? error.message : 'No se pudo eliminar la tarea.');
     }
+  }
+
+  protected actualizarBusqueda(event: Event): void {
+    this.busqueda.set((event.target as HTMLInputElement).value);
+  }
+
+  protected actualizarMateria(event: Event): void {
+    this.filtroMateria.set((event.target as HTMLSelectElement).value);
+  }
+
+  protected actualizarPrioridad(event: Event): void {
+    this.filtroPrioridad.set((event.target as HTMLSelectElement).value as PrioridadTarea | '');
+  }
+
+  protected actualizarEstado(event: Event): void {
+    this.filtroEstado.set((event.target as HTMLSelectElement).value as EstadoTarea | '');
+  }
+
+  protected limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.filtroMateria.set('');
+    this.filtroPrioridad.set('');
+    this.filtroEstado.set('');
   }
 
   protected prioridadTexto(prioridad: PrioridadTarea): string {
