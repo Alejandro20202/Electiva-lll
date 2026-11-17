@@ -1,0 +1,120 @@
+<section class="tasks-page" aria-labelledby="page-heading">
+  <div class="page-heading">
+    <div>
+      <span class="page-eyebrow">TU ESPACIO ACADÉMICO</span>
+      <h2 id="page-heading">Tareas</h2>
+      <p>Organiza tus entregas y mantén al día tu progreso académico.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="abrirNuevaTarea()">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
+      Agregar tarea
+    </button>
+  </div>
+
+  @if (errorMessage()) { <p class="form-alert" role="alert">{{ errorMessage() }}</p> }
+
+  @if (formularioVisible()) {
+    <form class="task-form" [formGroup]="tareaForm" (ngSubmit)="guardarTarea()">
+      <div class="form-heading">
+        <div>
+          <h3>{{ editandoId() ? 'Editar tarea' : 'Nueva tarea' }}</h3>
+          <p>Completa los datos de tu actividad académica.</p>
+        </div>
+        <button class="icon-button close-button" type="button" aria-label="Cerrar formulario" (click)="cancelarFormulario()">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+
+      <div class="form-grid">
+        <div class="field field-title">
+          <label for="task-title">Título de la tarea <span aria-hidden="true">*</span></label>
+          <input id="task-title" type="text" formControlName="titulo" maxlength="100" autocomplete="off" placeholder="Ej. Entrega del proyecto final" [attr.aria-invalid]="titulo.invalid && (titulo.touched || enviado())" />
+          @if (titulo.invalid && (titulo.touched || enviado())) {
+            <span class="field-error">
+              @if (titulo.hasError('required') || titulo.hasError('blank')) { Escribe el título de la tarea. }
+              @else if (titulo.hasError('maxlength')) { El título no puede superar los 100 caracteres. }
+            </span>
+          }
+        </div>
+        <div class="field">
+          <label for="task-subject">Materia <span class="optional">(opcional)</span></label>
+          <select id="task-subject" formControlName="materiaId">
+            <option value="">Sin materia</option>
+            @for (materia of eduTrack.materias(); track materia.id) { <option [value]="materia.id">{{ materia.nombre }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="task-date">Fecha de entrega <span class="optional">(opcional)</span></label>
+          <input id="task-date" type="date" formControlName="fechaEntrega" />
+        </div>
+        <div class="field">
+          <label for="task-priority">Prioridad</label>
+          <select id="task-priority" formControlName="prioridad">
+            <option value="baja">Baja</option><option value="media">Media</option><option value="alta">Alta</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="task-status">Estado</label>
+          <select id="task-status" formControlName="estado">
+            <option value="pendiente">Pendiente</option><option value="completada">Completada</option>
+          </select>
+        </div>
+        <div class="field field-description">
+          <label for="task-description">Descripción <span class="optional">(opcional)</span></label>
+          <textarea id="task-description" formControlName="descripcion" maxlength="300" rows="3" placeholder="Añade detalles o instrucciones"></textarea>
+          <span class="character-count">{{ tareaForm.controls.descripcion.value.length }}/300</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="cancelarFormulario()">Cancelar</button>
+        <button class="primary-button" type="submit">{{ editandoId() ? 'Guardar cambios' : 'Crear tarea' }}</button>
+      </div>
+    </form>
+  }
+
+  <div class="list-heading">
+    <div><h3>Tus tareas</h3><p>{{ eduTrack.totalTareas() }} {{ eduTrack.totalTareas() === 1 ? 'tarea registrada' : 'tareas registradas' }}</p></div>
+    <span class="pending-summary">{{ eduTrack.tareasPendientes() }} pendientes</span>
+  </div>
+
+  @if (tareasConMateria().length > 0) {
+    <div class="task-list">
+      @for (item of tareasConMateria(); track item.tarea.id) {
+        <article class="task-card" [class.task-card--completed]="item.tarea.estado === 'completada'">
+          <button class="status-button" type="button" [attr.aria-label]="item.tarea.estado === 'completada' ? 'Marcar como pendiente' : 'Marcar como completada'" (click)="cambiarEstado(item.tarea)">
+            <span [class.status-check]="item.tarea.estado === 'completada'" aria-hidden="true">{{ item.tarea.estado === 'completada' ? '✓' : '' }}</span>
+          </button>
+          <div class="task-main">
+            <div class="task-title-row">
+              <h4>{{ item.tarea.titulo }}</h4>
+              <span class="priority-badge" [class]="'priority-badge priority-badge--' + item.tarea.prioridad">{{ prioridadTexto(item.tarea.prioridad) }}</span>
+            </div>
+            <div class="task-meta">
+              @if (item.materia) { <span class="subject-label"><span class="subject-dot" [class]="'subject-dot subject-dot--' + item.materia.color"></span>{{ item.materia.nombre }}</span> }
+              <span class="date-label">{{ fechaTexto(item.tarea.fechaEntrega) }}</span>
+              <span class="state-label">{{ item.tarea.estado === 'completada' ? 'Completada' : 'Pendiente' }}</span>
+            </div>
+            @if (item.tarea.descripcion) { <p class="task-description">{{ item.tarea.descripcion }}</p> }
+          </div>
+          <div class="task-actions">
+            <button class="secondary-button action-button" type="button" (click)="editarTarea(item.tarea)">Editar</button>
+            <button class="danger-button action-button" type="button" (click)="pedirConfirmacion(item.tarea.id)">Eliminar</button>
+          </div>
+          @if (confirmarEliminacionId() === item.tarea.id) {
+            <div class="delete-confirmation" role="group" aria-label="Confirmar eliminación">
+              <span>¿Eliminar esta tarea?</span>
+              <button class="secondary-button action-button" type="button" (click)="confirmarEliminacionId.set(null)">Cancelar</button>
+              <button class="danger-button action-button" type="button" (click)="eliminarTarea(item.tarea.id)">Confirmar eliminación</button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="empty-state">
+      <span class="empty-icon" aria-hidden="true">✓</span><h4>Aún no tienes tareas</h4>
+      <p>Agrega tu primera tarea para empezar a organizar tus entregas.</p>
+      <button class="primary-button" type="button" (click)="abrirNuevaTarea()">Agregar primera tarea</button>
+    </div>
+  }
+</section>
