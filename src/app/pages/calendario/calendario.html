@@ -1,0 +1,88 @@
+<section class="calendar-page" aria-labelledby="page-heading">
+  <header class="page-heading">
+    <div>
+      <span class="page-eyebrow">TU ESPACIO ACADÉMICO</span>
+      <h2 id="page-heading">Agenda académica</h2>
+      <p>Consulta tus entregas organizadas por fecha y conoce qué actividades requieren atención.</p>
+    </div>
+    <a class="primary-button" routerLink="/tareas">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>
+      Nueva tarea
+    </a>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumen de entregas">
+    <article class="summary-card summary-card--upcoming">
+      <span class="summary-icon" aria-hidden="true">→</span>
+      <span class="summary-label">Entregas próximas</span>
+      <strong>{{ tareasProximas() }}</strong>
+      <span>pendientes por entregar</span>
+    </article>
+    <article class="summary-card summary-card--overdue">
+      <span class="summary-icon" aria-hidden="true">!</span>
+      <span class="summary-label">Entregas vencidas</span>
+      <strong>{{ tareasVencidas() }}</strong>
+      <span>requieren atención</span>
+    </article>
+    <article class="summary-card summary-card--all">
+      <span class="summary-icon" aria-hidden="true">✓</span>
+      <span class="summary-label">Tareas registradas</span>
+      <strong>{{ eduTrack.totalTareas() }}</strong>
+      <span>{{ eduTrack.tareasCompletadas() }} completadas</span>
+    </article>
+  </section>
+
+  @if (agenda().length > 0) {
+    <div class="agenda-list">
+      @for (grupo of agenda(); track grupo.key) {
+        <section class="agenda-group" [attr.aria-labelledby]="'agenda-' + grupo.key">
+          <header class="group-heading">
+            <div class="date-marker" aria-hidden="true">
+              @if (grupo.key === 'sin-fecha') { <span>—</span> } @else { <span>{{ grupo.titulo.slice(0, 2) }}</span> }
+            </div>
+            <div>
+              <h3 [id]="'agenda-' + grupo.key">{{ grupo.titulo }}</h3>
+              <p>{{ grupo.subtitulo }}</p>
+            </div>
+            <span class="group-count">{{ grupo.items.length }} {{ grupo.items.length === 1 ? 'tarea' : 'tareas' }}</span>
+          </header>
+
+          <div class="agenda-items">
+            @for (item of grupo.items; track item.tarea.id) {
+              <article class="agenda-item" [class]="'agenda-item agenda-item--' + item.tipo">
+                <span class="item-line" aria-hidden="true"></span>
+                <div class="item-content">
+                  <div class="item-title-row">
+                    <h4>{{ item.tarea.titulo }}</h4>
+                    <span class="priority-badge" [class]="'priority-badge priority-badge--' + item.tarea.prioridad">
+                      {{ prioridadTexto(item.tarea.prioridad) }}
+                    </span>
+                  </div>
+                  <div class="item-meta">
+                    @if (item.materia) {
+                      <span class="subject-label">
+                        <span class="subject-dot" [class]="'subject-dot subject-dot--' + item.materia.color"></span>
+                        {{ item.materia.nombre }}
+                      </span>
+                    } @else { <span class="subject-label">Sin materia</span> }
+                    <span>{{ item.fechaTexto }}</span>
+                    <span class="status-label">{{ estadoTexto(item.tarea.estado) }}</span>
+                  </div>
+                  @if (item.tarea.descripcion) { <p>{{ item.tarea.descripcion }}</p> }
+                </div>
+                <span class="delivery-status">{{ tipoTexto(item.tipo) }}</span>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  } @else {
+    <section class="empty-state">
+      <span class="empty-icon" aria-hidden="true">✓</span>
+      <h3>Tu agenda está despejada</h3>
+      <p>Cuando registres tareas, sus entregas aparecerán agrupadas aquí por fecha.</p>
+      <a class="primary-button" routerLink="/tareas">Agregar primera tarea</a>
+    </section>
+  }
+</section>
